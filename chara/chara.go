@@ -3,6 +3,7 @@ package chara
 import (
 	"crypto/sha512"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -23,6 +24,17 @@ var invalidNames = map[string]string{
 	"get":  "get",
 	"kill": "kill",
 	"cast": "cast",
+}
+
+type CharSheet struct {
+	Name     string
+	Location string
+	Desc     string
+}
+
+type ActiveCharacter struct {
+	ResponseChannel chan string
+	CharData        CharSheet
 }
 
 func checkValidName(name string, nameList map[string]string, invalidNames map[string]string) bool {
@@ -129,17 +141,28 @@ func create(ch chan string, createChan chan string) {
 
 	hasher := sha512.New()
 	pwHash := fmt.Sprintf("%x", hasher.Sum([]byte(pw1)))
-	newChara := []string{name, pwHash}
+	newCharEntry := []string{name, pwHash}
 
-	charFile, err := os.OpenFile(charListFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	listFile, err := os.OpenFile(charListFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer charFile.Close()
-	w := csv.NewWriter(charFile)
-	if err := w.Write(newChara); err != nil {
+	defer listFile.Close()
+	w := csv.NewWriter(listFile)
+	if err := w.Write(newCharEntry); err != nil {
 		log.Fatal(err)
 	}
 	w.Flush()
+	charFileName := "chara" + string(os.PathSeparator) + name + ".json"
+	cf, err := os.OpenFile(charFileName, os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Fatal(err)
+	}
+	newCharSheet := CharSheet{name, "1000", "A formless being.\n"}
+	jChar, err := json.MarshalIndent(newCharSheet, "", "\t")
+	if err != nil {
+		log.Fatal(err)
+	}
+	cf.Write(jChar)
 	ch <- fmt.Sprintf("Success:%s", name)
 }

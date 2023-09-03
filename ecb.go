@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"time"
 
 	"github.com/lpbeast/ecbmud/chara"
@@ -23,6 +25,7 @@ type ctrlMsg struct {
 	returnChannel chan string
 }
 
+// createConnection sets up a handler for I/O for a given connection and character
 func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg) {
 	ch := make(chan string)
 	ic := make(chan string)
@@ -73,8 +76,12 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 				msgForServer := inputMsg{name, input}
 				servChan <- msgForServer
 			}
-		case resp := <-ch:
-			io.WriteString(c, resp)
+		case resp, ok := <-ch:
+			if !ok {
+				connected = false
+			} else {
+				io.WriteString(c, resp)
+			}
 		default:
 		}
 	}
@@ -86,13 +93,17 @@ func main() {
 	runServer := true
 	// servChan is for the connection handlers to send user input to the main server
 	servChan := make(chan inputMsg)
-	// the goroutine that listens for new connections uses connChan to tell the server
+	// connChan is for the goroutine that listens for new connections to tell the server
 	// that there's a new connection, and to hand the connection over to the connection handler
 	connChan := make(chan net.Conn)
 	// ctrlChan is for the connection handlers to send control messages like LOGIN and QUIT
 	// to the main server
 	ctrlChan := make(chan ctrlMsg)
+	// activeUsers tracks logged in characters and associates them with the channel used
+	// to send messages to that character
 	activeUsers := make(map[string]chan string)
+	// activeUserSheets associates character names with information about that character
+	activeUserSheets := make(map[string]chara.CharSheet)
 
 	l, err := net.Listen("tcp", ":4040")
 	if err != nil {
@@ -122,6 +133,19 @@ func main() {
 				fmt.Printf("Server received LOGIN for %q\n", incoming.chara)
 				if activeUsers[incoming.chara] == nil {
 					activeUsers[incoming.chara] = incoming.returnChannel
+					charFile := "chara" + string(os.PathSeparator) + incoming.chara + ".json"
+					charSheet := chara.CharSheet{}
+					cf, err := os.ReadFile(charFile)
+					if err != nil {
+						incoming.returnChannel <- fmt.Sprintf("Could not read character file for %q.\n", incoming.chara)
+						close(incoming.returnChannel)
+					}
+					err = json.Unmarshal(cf, &charSheet)
+					if err != nil {
+						incoming.returnChannel <- fmt.Sprintf("error unmarshaling JSON: %s", err)
+						close(incoming.returnChannel)
+					}
+					activeUserSheets[incoming.chara] = charSheet
 					incoming.returnChannel <- fmt.Sprintf("Welcome to Endless Crystal Blue MUD, %s.\n", incoming.chara)
 				} else {
 					incoming.returnChannel <- "Character already logged in.\n"
