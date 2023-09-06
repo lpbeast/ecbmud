@@ -1,0 +1,32 @@
+{
+    "1000":{
+        "ID":"1000",
+        "Name":"Market Square",
+        "Desc":"A bustling market square.",
+        "Exits":{"north": "1004", "east": "1001"}
+    },
+    "1001":{
+        "ID":"1001",
+        "Name":"Harbor Road West",
+        "Desc":"A cobblestone street leading east and west. You can hear the market to the west.",
+        "Exits":{"east": "1002", "west": "1000"}
+    },
+    "1002":{
+        "ID":"1002",
+        "Name":"Harbor Road East",
+        "Desc":"A cobblestone street leading east and west. You can hear the harbor to the east.",
+        "Exits":{"east": "1003", "west": "1001"}
+    },
+    "1003":{
+        "ID":"1003",
+        "Name":"Harbor Square",
+        "Desc":"A busy cobblestone square, full of sailors and cargo. Cries of seagulls and the scent of salt fill the air.",
+        "Exits":{"down": "3000", "south": "1001"}
+    },
+    "1004":{
+        "ID":"1004",
+        "Name":"Market Road North",
+        "Desc":"A cobblestone street leading north and south. You can hear the market to the south.",
+        "Exits":{"south": "1000"}
+    }
+    }

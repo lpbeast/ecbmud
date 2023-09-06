@@ -34,8 +34,12 @@ type CharSheet struct {
 
 type ActiveCharacter struct {
 	ResponseChannel chan string
+	Cooldown        int
 	CharData        CharSheet
+	IncomingCmds    []string
 }
+
+type UserList map[string]*ActiveCharacter
 
 func checkValidName(name string, nameList map[string]string, invalidNames map[string]string) bool {
 	if len(name) > 16 {
