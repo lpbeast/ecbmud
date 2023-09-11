@@ -3,7 +3,7 @@
         "ID":"1000",
         "Name":"Market Square",
         "Desc":"A bustling market square.",
-        "Exits":{"north": "1004", "east": "1001"}
+        "Exits":{"north": "1004", "east": "1001", "northwest": "1005", "northeast": "1006"}
     },
     "1001":{
         "ID":"1001",
@@ -21,12 +21,24 @@
         "ID":"1003",
         "Name":"Harbor Square",
         "Desc":"A busy cobblestone square, full of sailors and cargo. Cries of seagulls and the scent of salt fill the air.",
-        "Exits":{"down": "3000", "south": "1001"}
+        "Exits":{"west": "1002"}
     },
     "1004":{
         "ID":"1004",
         "Name":"Market Road North",
         "Desc":"A cobblestone street leading north and south. You can hear the market to the south.",
         "Exits":{"south": "1000"}
+    },
+    "1005":{
+        "ID":"1005",
+        "Name":"Herb Shop",
+        "Desc":"A cozy little shop filled with bundles of drying herbs and things in jars.",
+        "Exits":{"southeast": "1000"}
+    },
+    "1006":{
+        "ID":"1006",
+        "Name":"Smithy",
+        "Desc":"A warm, loud, and smoky blacksmith shop.",
+        "Exits":{"southwest": "1000"}
     }
     }
