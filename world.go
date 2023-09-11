@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lpbeast/ecbmud/chara"
+	"github.com/lpbeast/ecbmud/commands"
 	"github.com/lpbeast/ecbmud/rooms"
 )
 
@@ -21,6 +22,14 @@ func doServerTick(world rooms.RoomList, users chara.UserList) {
 			response := fmt.Sprintf("Server: Received %q from %q\n", v.IncomingCmds[0], v.CharData.Name)
 			fmt.Print(response)
 			v.ResponseChannel <- response
+			pc, err := commands.ParseCommand(v.IncomingCmds[0])
+			if err != nil {
+				log.Println(err.Error())
+			}
+			err = commands.RunCommand(pc, v, world)
+			if err != nil {
+				log.Println(err.Error())
+			}
 			v.IncomingCmds = v.IncomingCmds[1:]
 		}
 	}
