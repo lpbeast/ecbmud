@@ -1,6 +1,8 @@
 package commands
 
-import "strings"
+import (
+	"strings"
+)
 
 type TokenType string
 

@@ -1,0 +1,14 @@
+{
+    "i00001":{
+        "Serial":"i00001",
+        "Name":"cold blue chain",
+        "Keywords":["cold", "blue", "chain"],
+        "Desc":"A delicate chain of glittering blue links."
+    },
+    "i00002":{
+        "Serial":"i00002",
+        "Name":"cold iron sword",
+        "Keywords":["cold", "iron", "sword"],
+        "Desc":"A beautifully forged sword of cold iron."
+    }
+}
