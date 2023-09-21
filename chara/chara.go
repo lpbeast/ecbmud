@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/lpbeast/ecbmud/items"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -30,6 +31,7 @@ type CharSheet struct {
 	Name     string
 	Location string
 	Desc     string
+	Inv      []items.Item
 }
 
 type ActiveCharacter struct {
@@ -162,11 +164,37 @@ func create(ch chan string, createChan chan string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	newCharSheet := CharSheet{name, "1000", "A formless being.\n"}
+	newCharSheet := CharSheet{name, "r1000", "A formless being.\n", []items.Item{}}
 	jChar, err := json.MarshalIndent(newCharSheet, "", "\t")
 	if err != nil {
 		log.Fatal(err)
 	}
 	cf.Write(jChar)
 	ch <- fmt.Sprintf("Success:%s", name)
+}
+
+func (c *CharSheet) ListContents() []string {
+	itemList := []string{}
+	for _, v := range c.Inv {
+		itemList = append(itemList, v.Name)
+	}
+	return itemList
+}
+
+func (c *CharSheet) Insert(itm items.Item) {
+	c.Inv = append(c.Inv, itm)
+}
+
+func (c *CharSheet) Remove(itm string) error {
+	for k, v := range c.Inv {
+		if v.Serial == itm {
+			if k == len(c.Inv)-1 {
+				c.Inv = c.Inv[:k]
+			} else {
+				c.Inv = append(c.Inv[:k], c.Inv[k+1:]...)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("not found: %q", itm)
 }
