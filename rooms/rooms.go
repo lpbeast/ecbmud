@@ -7,6 +7,7 @@ import (
 
 	"github.com/lpbeast/ecbmud/chara"
 	"github.com/lpbeast/ecbmud/items"
+	"github.com/lpbeast/ecbmud/mobs"
 )
 
 type Room struct {
@@ -15,7 +16,9 @@ type Room struct {
 	Desc     string            `json:"Desc"`
 	Exits    map[string]string `json:"Exits"`
 	ContList []string          `json:"ContList"`
+	MobList  []string          `json:"MobList"`
 	Contents []items.Item
+	Mobs     []*mobs.Mob
 	PCs      []*chara.ActiveCharacter
 }
 
@@ -65,7 +68,7 @@ func (r *Room) Insert(itm items.Item) {
 
 func (r *Room) Remove(itm string) error {
 	for k, v := range r.Contents {
-		if v.Serial == itm {
+		if v.ID == itm {
 			if k == len(r.Contents)-1 {
 				r.Contents = r.Contents[:k]
 			} else {

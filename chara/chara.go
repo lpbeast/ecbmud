@@ -187,7 +187,7 @@ func (c *CharSheet) Insert(itm items.Item) {
 
 func (c *CharSheet) Remove(itm string) error {
 	for k, v := range c.Inv {
-		if v.Serial == itm {
+		if v.ID == itm {
 			if k == len(c.Inv)-1 {
 				c.Inv = c.Inv[:k]
 			} else {

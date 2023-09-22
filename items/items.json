@@ -1,14 +1,32 @@
 {
-    "i00001":{
-        "Serial":"i00001",
+    "i0001":{
+        "ID":"i0001",
         "Name":"cold blue chain",
         "Keywords":["cold", "blue", "chain"],
         "Desc":"A delicate chain of glittering blue links."
     },
-    "i00002":{
-        "Serial":"i00002",
+    "i0002":{
+        "ID":"i0002",
         "Name":"cold iron sword",
         "Keywords":["cold", "iron", "sword"],
         "Desc":"A beautifully forged sword of cold iron."
+    },
+    "i0003":{
+        "ID":"i0003",
+        "Name":"sparkly pink tutu",
+        "Keywords":["sparkly", "pink", "tutu"],
+        "Desc":"A sparkly, ruffly, very pink tutu."
+    },
+    "i0004":{
+        "ID":"i0004",
+        "Name":"egg",
+        "Keywords":["egg"],
+        "Desc":"A speckled brown egg."
+    },
+    "i0005":{
+        "ID":"i0005",
+        "Name":"tome of knowledge",
+        "Keywords":["tome", "knowledge", "book"],
+        "Desc":"A heavy book, the corners of its bindings protected by metal."
     }
 }

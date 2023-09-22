@@ -131,7 +131,7 @@ func RunGetCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) 
 			ch.ResponseChannel <- fmt.Sprintf("You don't see %q here.\n", args[0].Literal)
 			return err
 		} else {
-			chLoc.Remove(itm.Serial)
+			chLoc.Remove(itm.ID)
 			ch.CharData.Insert(itm)
 			chMsg := fmt.Sprintf("You pick up the %s.\n", itm.Name)
 			otherMsg := fmt.Sprintf("%s picks up a %s.\n", ch.CharData.Name, itm.Name)
@@ -152,7 +152,7 @@ func RunDropCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList)
 			ch.ResponseChannel <- fmt.Sprintf("You don't have a %q.\n", args[0].Literal)
 			return err
 		} else {
-			ch.CharData.Remove(itm.Serial)
+			ch.CharData.Remove(itm.ID)
 			chLoc.Insert(itm)
 			chMsg := fmt.Sprintf("You drop the %s on the ground.\n", itm.Name)
 			otherMsg := fmt.Sprintf("%s drops a %s on the ground.\n", ch.CharData.Name, itm.Name)
