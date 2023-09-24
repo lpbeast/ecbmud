@@ -198,3 +198,12 @@ func (c *CharSheet) Remove(itm string) error {
 	}
 	return fmt.Errorf("not found: %q", itm)
 }
+
+func AutoCompletePCs(stub string, chList []*ActiveCharacter) (*ActiveCharacter, error) {
+	for _, v := range chList {
+		if strings.HasPrefix(strings.ToLower(v.CharData.Name), stub) {
+			return v, nil
+		}
+	}
+	return nil, fmt.Errorf("not found: %q", stub)
+}

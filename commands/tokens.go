@@ -28,6 +28,8 @@ const (
 	DROP = "DROP"
 	USE  = "USE"
 	LOOK = "LOOK"
+	SAY  = "SAY"
+	TELL = "TELL"
 
 	SCORE     = "SCORE"
 	INVENTORY = "INVENTORY"
@@ -78,6 +80,9 @@ var keywords = map[string]TokenType{
 	"use":  USE,
 	"look": LOOK,
 	"l":    LOOK,
+	"say":  SAY,
+	"tell": TELL,
+	"t":    TELL,
 
 	"score":     SCORE,
 	"inventory": INVENTORY,
