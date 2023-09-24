@@ -94,7 +94,12 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 	c.Close()
 }
 
+func serverCleanup() {
+	fmt.Printf("Shutting down server.\n")
+}
+
 func main() {
+	defer serverCleanup()
 	runWorld := true
 	// servChan is for the connection handlers to send user input to the main server
 	servChan := make(chan inputMsg, 400)
@@ -165,6 +170,8 @@ func main() {
 						charToLogIn := chara.ActiveCharacter{ResponseChannel: incoming.returnChannel, Cooldown: 0, CharData: charSheet, IncomingCmds: []string{}}
 						activeUsers[incoming.chara] = &charToLogIn
 						incoming.returnChannel <- fmt.Sprintf("Welcome to Endless Crystal Blue MUD, %s.\n", incoming.chara)
+						worldRooms[charToLogIn.CharData.Location].PCs = append(worldRooms[charToLogIn.CharData.Location].PCs, &charToLogIn)
+						worldRooms[charToLogIn.CharData.Location].LocalAnnounce(fmt.Sprintf("%s wakes up.\n", charToLogIn.CharData.Name))
 					} else {
 						incoming.returnChannel <- "Character already logged in.\n"
 						activeUsers[incoming.chara].ResponseChannel <- "Duplicate login attempt.\n"
