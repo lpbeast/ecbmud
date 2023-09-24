@@ -12,32 +12,38 @@ import (
 
 type ParsedCommand struct {
 	Command   Token
-	Arguments []Token
+	Arguments string
 }
 
 func ParseCommand(in string) (*ParsedCommand, error) {
-	words := strings.Split(strings.ToLower(in), " ")
-	if len(words) == 0 {
+	cmd, args, _ := strings.Cut(in, " ")
+	if cmd == "" {
 		return nil, errors.New("empty command")
 	}
-	newCmd := lookupCommand(words[0])
+	newCmd := lookupCommand(cmd)
+	return &ParsedCommand{newCmd, args}, nil
+}
+
+// TODO: expand for parsing quantities and ordinals
+func ParseArgs(in string) []Token {
+	words := strings.Split(strings.ToLower(in), " ")
 	newArgs := []Token{}
-	for _, v := range words[1:] {
+	for _, v := range words {
 		newArgs = append(newArgs, lookupIdent(v))
 	}
-	return &ParsedCommand{newCmd, newArgs}, nil
+	return newArgs
 }
 
 func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter, loc rooms.RoomList, charas chara.UserList) error {
 	switch pc.Command.Type {
 	case LOOK:
-		return RunLookCommand(pc.Arguments, ch, loc)
+		return RunLookCommand(ParseArgs(pc.Arguments), ch, loc)
 	case GO:
-		return RunGoCommand(pc.Arguments, ch, loc)
+		return RunGoCommand(ParseArgs(pc.Arguments), ch, loc)
 	case GET:
-		return RunGetCommand(pc.Arguments, ch, loc)
+		return RunGetCommand(ParseArgs(pc.Arguments), ch, loc)
 	case DROP:
-		return RunDropCommand(pc.Arguments, ch, loc)
+		return RunDropCommand(ParseArgs(pc.Arguments), ch, loc)
 	case INVENTORY:
 		return RunInvCommand(ch)
 	case DIRECTION:
@@ -172,29 +178,25 @@ func RunInvCommand(ch *chara.ActiveCharacter) error {
 	return nil
 }
 
-func RunSayCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
+func RunSayCommand(msg string, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
 	chLoc := loc[ch.CharData.Location]
-	if len(args) == 0 {
+	if msg == "" {
 		ch.ResponseChannel <- "Say what?\n"
 		return nil
 	} else {
-		sayWords := []string{}
-		for _, v := range args {
-			sayWords = append(sayWords, v.Literal)
-		}
-		sayString := strings.Join(sayWords, " ")
-		chMsg := fmt.Sprintf("You say %q\n", sayString)
-		otherMsg := fmt.Sprintf("%s says %q\n", ch.CharData.Name, sayString)
+		chMsg := fmt.Sprintf("You say %q\n", msg)
+		otherMsg := fmt.Sprintf("%s says %q\n", ch.CharData.Name, msg)
 		chLoc.LocalAnnouncePCMsg(ch, chMsg, otherMsg)
 		return nil
 	}
 }
 
-func RunTellCommand(args []Token, ch *chara.ActiveCharacter, charas chara.UserList) error {
-	if len(args) == 0 {
+func RunTellCommand(args string, ch *chara.ActiveCharacter, charas chara.UserList) error {
+	recipName, msg, _ := strings.Cut(args, " ")
+	if recipName == "" {
 		ch.ResponseChannel <- "Tell who?\n"
 		return nil
-	} else if len(args) == 1 {
+	} else if msg == "" {
 		ch.ResponseChannel <- "Tell them what?\n"
 		return nil
 	} else {
@@ -202,20 +204,13 @@ func RunTellCommand(args []Token, ch *chara.ActiveCharacter, charas chara.UserLi
 		for _, v := range charas {
 			charaSlice = append(charaSlice, v)
 		}
-		recipName := args[0].Literal
-		msg := args[1:]
 		recip, err := chara.AutoCompletePCs(recipName, charaSlice)
 		if err != nil {
 			ch.ResponseChannel <- "Could not find a player by that name.\n"
 			return nil
 		}
-		sayWords := []string{}
-		for _, v := range msg {
-			sayWords = append(sayWords, v.Literal)
-		}
-		sayString := strings.Join(sayWords, " ")
-		chMsg := fmt.Sprintf("You tell %s %q\n", recip.CharData.Name, sayString)
-		otherMsg := fmt.Sprintf("%s tells you %q\n", ch.CharData.Name, sayString)
+		chMsg := fmt.Sprintf("You tell %s %q\n", recip.CharData.Name, msg)
+		otherMsg := fmt.Sprintf("%s tells you %q\n", ch.CharData.Name, msg)
 		ch.ResponseChannel <- chMsg
 		recip.ResponseChannel <- otherMsg
 		return nil

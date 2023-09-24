@@ -16,7 +16,7 @@ func doServerTick(world rooms.RoomList, users chara.UserList) {
 	// do mobs once they're implemented
 
 	// move on to player commands
-	// go through each connected PC one at a time, if they have a command waiting
+	// go through each connected PC one at a time, if they have any commands waiting
 	// in the queue, process the first one.
 	// this should avoid race conditions even if two characters try to affect the same
 	// item or mob on the same tick
