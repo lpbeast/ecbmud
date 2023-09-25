@@ -1,0 +1,18 @@
+{
+    "m0001":{
+        "ID":"m0001",
+        "Name":"city guard",
+        "Keywords":["city", "guard", "soldier"],
+        "Desc":"A bored soldier in helmet and brigandine, with a bright tabard.",
+        "Loc":"r1000",
+        "ContList":["i0004"]
+    },
+    "m0002":{
+        "ID":"m0002",
+        "Name":"scavenging rat",
+        "Keywords":["scavenging", "scavenger", "rat"],
+        "Desc":"A large but scrawny rat.",
+        "Loc":"r1001",
+        "ContList":[]
+    }
+}

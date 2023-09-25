@@ -7,6 +7,7 @@ import (
 
 	"github.com/lpbeast/ecbmud/chara"
 	"github.com/lpbeast/ecbmud/items"
+	"github.com/lpbeast/ecbmud/mobs"
 )
 
 type Room struct {
@@ -15,13 +16,15 @@ type Room struct {
 	Desc     string            `json:"Desc"`
 	Exits    map[string]string `json:"Exits"`
 	ContList []string          `json:"ContList"`
+	MobList  []string          `json:"MobList"`
 	Contents []items.Item
+	Mobs     []*mobs.Mob
 	PCs      []*chara.ActiveCharacter
 }
 
 type RoomList map[string]*Room
 
-func LoadRooms() (RoomList, error) {
+func LoadRooms(ml mobs.MobList) (RoomList, error) {
 	il, err := items.LoadItems()
 	if err != nil {
 		fmt.Printf("unable to load items")
@@ -46,7 +49,10 @@ func LoadRooms() (RoomList, error) {
 		for _, inum := range v.ContList {
 			v.Contents = append(v.Contents, il[inum])
 		}
-		fmt.Printf("room %s: contents %+v\n", v.ID, v.Contents)
+	}
+
+	for _, v := range ml {
+		rl[v.Loc].Mobs = append(rl[v.Loc].Mobs, v)
 	}
 	return rl, nil
 }
@@ -65,7 +71,7 @@ func (r *Room) Insert(itm items.Item) {
 
 func (r *Room) Remove(itm string) error {
 	for k, v := range r.Contents {
-		if v.Serial == itm {
+		if v.ID == itm {
 			if k == len(r.Contents)-1 {
 				r.Contents = r.Contents[:k]
 			} else {
@@ -112,7 +118,7 @@ func (r *Room) TransferPlayer(ch *chara.ActiveCharacter, dest *Room) {
 			}
 		}
 	}
-	chLeaveMsg := fmt.Sprintf("You travel %s", destAnnStrPC)
+	chLeaveMsg := fmt.Sprintf("You travel %s.\n", destAnnStrPC)
 	otherLeaveMsg := fmt.Sprintf("%s leaves for %s.\n", ch.CharData.Name, destAnnStr)
 	r.LocalAnnouncePCMsg(ch, chLeaveMsg, otherLeaveMsg)
 	arrAnnStr := "somewhere mysterious"
@@ -141,4 +147,52 @@ func (r *Room) TransferPlayer(ch *chara.ActiveCharacter, dest *Room) {
 		}
 	}
 	dest.PCs = append(dest.PCs, ch)
+	ch.CharData.Location = dest.ID
+}
+
+func (r *Room) TransferMob(m *mobs.Mob, dest *Room) {
+	destAnnStr := "somewhere mysterious"
+	for k, v := range r.Exits {
+		if v == dest.ID {
+			switch k {
+			case "up":
+				destAnnStr = "above"
+			case "down":
+				destAnnStr = "below"
+			default:
+				destAnnStr = "the " + k
+			}
+		}
+	}
+	r.LocalAnnounce(fmt.Sprintf("%s leaves for %s.\n", m.Name, destAnnStr))
+
+	arrAnnStr := "somewhere mysterious"
+	for k, v := range dest.Exits {
+		if v == r.ID {
+			switch k {
+			case "up":
+				arrAnnStr = "above"
+			case "down":
+				arrAnnStr = "below"
+			default:
+				arrAnnStr = "the " + k
+			}
+		}
+	}
+	dest.LocalAnnounce(fmt.Sprintf("%s arrives from %s.\n", m.Name, arrAnnStr))
+
+	// remove mob from old room, add them to new room
+	for k, v := range r.Mobs {
+		if v == m {
+			if k == len(r.Mobs)-1 {
+				r.Mobs = r.Mobs[:k]
+			} else {
+				r.Mobs = append(r.Mobs[:k], r.Mobs[k+1:]...)
+			}
+		}
+	}
+	dest.Mobs = append(dest.Mobs, m)
+	// update mob's location as well as room moblists or it tries to leave from the same
+	// room over and over and multiplies
+	m.Loc = dest.ID
 }

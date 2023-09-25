@@ -14,7 +14,7 @@ type Container interface {
 }
 
 type Item struct {
-	Serial   string   `json:"Serial"`
+	ID       string   `json:"ID"`
 	Name     string   `json:"Name"`
 	Keywords []string `json:"Keywords"`
 	Desc     string   `json:"Desc"`
