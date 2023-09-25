@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/lpbeast/ecbmud/chara"
+	"github.com/lpbeast/ecbmud/commands"
+	"github.com/lpbeast/ecbmud/mobs"
 	"github.com/lpbeast/ecbmud/rooms"
 )
 
@@ -131,8 +133,19 @@ func main() {
 		}
 	}(connChan)
 
+	// this is currently really ugly - rooms should know which mobs they start with,
+	// instead of mobs having to know what rooms to put them in. I think.
+	fmt.Printf("Loading mob templates.\n")
+	mobTemplates, err := mobs.LoadMobs()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if mobTemplates == nil {
+		log.Fatal("No rooms loaded.\n")
+	}
+
 	fmt.Printf("Loading rooms.\n")
-	worldRooms, err := rooms.LoadRooms()
+	worldRooms, err := rooms.LoadRooms(mobTemplates)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,6 +185,7 @@ func main() {
 						incoming.returnChannel <- fmt.Sprintf("Welcome to Endless Crystal Blue MUD, %s.\n", incoming.chara)
 						worldRooms[charToLogIn.CharData.Location].PCs = append(worldRooms[charToLogIn.CharData.Location].PCs, &charToLogIn)
 						worldRooms[charToLogIn.CharData.Location].LocalAnnounce(fmt.Sprintf("%s wakes up.\n", charToLogIn.CharData.Name))
+						commands.RunLookCommand([]commands.Token{}, &charToLogIn, worldRooms)
 					} else {
 						incoming.returnChannel <- "Character already logged in.\n"
 						activeUsers[incoming.chara].ResponseChannel <- "Duplicate login attempt.\n"
@@ -194,6 +208,10 @@ func main() {
 			default:
 			}
 		}
-		doServerTick(worldRooms, activeUsers)
+		// TODO: at some point this will have to be modified so that it distinguishes
+		// between "the list of possible mobs" and "the list of currently spawned and
+		// active mobs" but that can wait till I get mobs working at all and know what
+		// I have to work with there.
+		doServerTick(worldRooms, activeUsers, mobTemplates)
 	}
 }

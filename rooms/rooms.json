@@ -5,7 +5,7 @@
         "Desc":"A bustling market square.",
         "Exits":{"north": "r1004", "east": "r1001", "northwest": "r1005", "northeast": "r1006"},
         "ContList":["i0001"],
-        "MobList":["m0001"]
+        "MobList":[]
     },
     "r1001":{
         "ID":"r1001",
@@ -13,7 +13,7 @@
         "Desc":"A cobblestone street leading east and west. You can hear the market to the west.",
         "Exits":{"east": "r1002", "west": "r1000"},
         "ContList":["i0003"],
-        "MobList":["m0002"]
+        "MobList":[]
     },
     "r1002":{
         "ID":"r1002",

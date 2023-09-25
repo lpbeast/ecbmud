@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/lpbeast/ecbmud/items"
 )
 
@@ -14,9 +15,10 @@ type Mob struct {
 	Name     string   `json:"Name"`
 	Keywords []string `json:"Keywords"`
 	Desc     string   `json:"Desc"`
-	Loc      string
+	Loc      string   `json:"Loc"`
 	ContList []string `json:"ContList"`
 	Contents []items.Item
+	UUID     string
 }
 
 type MobList map[string]*Mob
@@ -35,10 +37,14 @@ func LoadMobs() (MobList, error) {
 		fmt.Printf("error unmarshaling JSON: %s", err)
 		return nil, err
 	}
+	for _, v := range ml {
+		v.UUID = uuid.New().String()
+		fmt.Printf("loaded mob: %s: %s\n", v.Name, v.UUID)
+	}
 	return ml, nil
 }
 
-func AutoCompleteItems(stub string, mobs []*Mob) (Mob, error) {
+func AutoCompleteMobs(stub string, mobs []*Mob) (Mob, error) {
 	for _, v := range mobs {
 		for _, w := range v.Keywords {
 			if strings.HasPrefix(w, stub) {

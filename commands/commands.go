@@ -7,6 +7,7 @@ import (
 
 	"github.com/lpbeast/ecbmud/chara"
 	"github.com/lpbeast/ecbmud/items"
+	"github.com/lpbeast/ecbmud/mobs"
 	"github.com/lpbeast/ecbmud/rooms"
 )
 
@@ -26,6 +27,10 @@ func ParseCommand(in string) (*ParsedCommand, error) {
 
 // TODO: expand for parsing quantities and ordinals
 func ParseArgs(in string) []Token {
+	// strings.Split seems to do something weird with an empty string
+	if len(in) == 0 {
+		return []Token{}
+	}
 	words := strings.Split(strings.ToLower(in), " ")
 	newArgs := []Token{}
 	for _, v := range words {
@@ -66,11 +71,14 @@ func RunLookCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList)
 	}
 	switch args[0].Type {
 	case HERE:
-		pcStrings := ""
+		pcAndMobStrings := ""
 		for _, v := range chLoc.PCs {
 			if v != ch {
-				pcStrings += v.CharData.Name + " is standing here.\n"
+				pcAndMobStrings += v.CharData.Name + " is standing here.\n"
 			}
+		}
+		for _, v := range chLoc.Mobs {
+			pcAndMobStrings += v.Name + " is standing here.\n"
 		}
 		contents := chLoc.ListContents()
 		contStrings := ""
@@ -78,8 +86,8 @@ func RunLookCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList)
 			contStrings += v + "\n"
 		}
 		resp = fmt.Sprintf("%v\n    %v\nExits: %v\n", chLoc.Name, chLoc.Desc, chLoc.Exits)
-		if pcStrings != "" {
-			resp += pcStrings
+		if pcAndMobStrings != "" {
+			resp += pcAndMobStrings
 		}
 		if contStrings != "" {
 			resp += contStrings
@@ -87,12 +95,15 @@ func RunLookCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList)
 	case ME:
 		resp = ch.CharData.Desc + "\n"
 	case IDENT:
+		fmt.Printf("arguments: %+v\n", args)
 		if itm, err := items.AutoCompleteItems(args[0].Literal, ch.CharData.Inv); err == nil {
 			resp = fmt.Sprintf("%s\n", itm.Desc)
 		} else if itm, err := items.AutoCompleteItems(args[0].Literal, chLoc.Contents); err == nil {
 			resp = fmt.Sprintf("%s\n", itm.Desc)
 		} else if ch, err := chara.AutoCompletePCs(args[0].Literal, chLoc.PCs); err == nil {
 			resp = fmt.Sprintf("You look at %s.\n%s\n", ch.CharData.Name, ch.CharData.Desc)
+		} else if m, err := mobs.AutoCompleteMobs(args[0].Literal, chLoc.Mobs); err == nil {
+			resp = fmt.Sprintf("You look at %s.\n%s\n", m.Name, m.Desc)
 		} else {
 			resp = fmt.Sprintf("You don't see %v here.\n", args[0].Literal)
 		}
@@ -110,7 +121,6 @@ func RunGoCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) e
 	} else {
 		destString := AutoCompleteDirs(args[0].Literal)
 		if dest, ok := chLoc.Exits[destString]; ok {
-			ch.CharData.Location = dest
 			chLoc.TransferPlayer(ch, loc[dest])
 			RunLookCommand([]Token{}, ch, loc)
 		} else {
