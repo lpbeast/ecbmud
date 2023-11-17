@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/lpbeast/ecbmud/chara"
+	"github.com/lpbeast/ecbmud/combat"
 	"github.com/lpbeast/ecbmud/items"
 	"github.com/lpbeast/ecbmud/mobs"
 	"github.com/lpbeast/ecbmud/rooms"
@@ -60,6 +61,8 @@ func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter) error {
 		return RunTellCommand(pc.Arguments, ch)
 	case QUIT:
 		return RunQuitCommand(pc.Arguments, ch)
+	case KILL:
+		return RunKillCommand(ParseArgs(pc.Arguments), ch)
 	default:
 		return fmt.Errorf("command %q not handled", pc.Command.Literal)
 	}
@@ -230,6 +233,10 @@ func RunTellCommand(args string, ch *chara.ActiveCharacter) error {
 }
 
 func RunQuitCommand(args string, ch *chara.ActiveCharacter) error {
+	if len(args) > 0 {
+		ch.ResponseChannel <- "Type QUIT all by itself to quit the game.\n"
+		return nil
+	}
 	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	chMsg := "You drift off to sleep...\n"
 	otherMsg := fmt.Sprintf("%s falls asleep.\n", ch.CharData.Name)
@@ -245,5 +252,21 @@ func RunQuitCommand(args string, ch *chara.ActiveCharacter) error {
 		}
 	}
 	close(ch.ResponseChannel)
+	return nil
+}
+
+func RunKillCommand(args []Token, ch *chara.ActiveCharacter) error {
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
+	if len(args) == 0 {
+		ch.ResponseChannel <- "Kill what?\n"
+	} else if m, err := mobs.AutoCompleteMobs(args[0].Literal, chLoc.Mobs); err == nil {
+		chMsg := fmt.Sprintf("You smite the %s into nothingness.\n", m.Name)
+		otherMsg := fmt.Sprintf("%s smites the %s most mightily!\n", ch.CharData.Name, m.Name)
+		chLoc.LocalAnnouncePCMsg(ch, chMsg, otherMsg)
+		combat.MakeDead(m)
+	} else {
+		ch.ResponseChannel <- fmt.Sprintf("There is no %v here that you can kill.\n", args[0].Literal)
+	}
+
 	return nil
 }

@@ -4,7 +4,7 @@
         "Name":"city guard",
         "Keywords":["city", "guard", "soldier"],
         "Desc":"A bored soldier in helmet and brigandine, with a bright tabard.",
-        "Loc":"r1000",
+        "StartLoc":"r1000",
         "ContList":["i0004"]
     },
     "z0m0001":{
@@ -12,7 +12,7 @@
         "Name":"scavenging rat",
         "Keywords":["scavenging", "scavenger", "rat"],
         "Desc":"A large but scrawny rat.",
-        "Loc":"r1001",
+        "StartLoc":"r1001",
         "ContList":[]
     }
 }

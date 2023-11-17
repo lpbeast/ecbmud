@@ -15,11 +15,12 @@ type Mob struct {
 	Name     string   `json:"Name"`
 	Keywords []string `json:"Keywords"`
 	Desc     string   `json:"Desc"`
-	Loc      string   `json:"Loc"`
+	StartLoc string   `json:"StartLoc"`
 	ContList []string `json:"ContList"`
 	Contents []items.Item
 	UUID     string
 	Zone     string
+	Loc      string
 }
 
 type MobList map[string]*Mob
@@ -42,18 +43,19 @@ func LoadMobs(zoneID string) (MobList, error) {
 	for _, v := range ml {
 		v.UUID = uuid.New().String()
 		v.Zone = zoneID
+		v.Loc = v.StartLoc
 		fmt.Printf("loaded mob: %s: %s\n", v.Name, v.UUID)
 	}
 	return ml, nil
 }
 
-func AutoCompleteMobs(stub string, mobs []*Mob) (Mob, error) {
+func AutoCompleteMobs(stub string, mobs []*Mob) (*Mob, error) {
 	for _, v := range mobs {
 		for _, w := range v.Keywords {
 			if strings.HasPrefix(w, stub) {
-				return *v, nil
+				return v, nil
 			}
 		}
 	}
-	return Mob{}, fmt.Errorf("not found: %q", stub)
+	return nil, fmt.Errorf("not found: %q", stub)
 }

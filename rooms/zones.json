@@ -2,11 +2,13 @@
     "z1000":{
         "ID":"z1000",
         "Name":"Walls-City-Main",
-        "MobList":[]
+        "RepopTime":3000,
+        "RepopMsg":"The city bustles with activity."
     },
     "z1001":{
         "ID":"z1001",
         "Name":"Old-North-Road",
-        "MobList":[]
+        "RepopTime":3000,
+        "RepopMsg":"A chill breeze blows along the road."
     }
 }
