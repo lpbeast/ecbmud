@@ -22,21 +22,26 @@ type Item struct {
 
 type ItemList map[string]Item
 
-func LoadItems() (ItemList, error) {
-	il := ItemList{}
+// There's only one item list needed, and several things need access to it. A global
+// variable available to the whole server reduces the number of arguments that have
+// to be passed down through layers of function calls.
+var GlobalItemList ItemList
+
+func LoadItems() error {
+	GlobalItemList = ItemList{}
 	fname := "items/items.json"
 	f, err := os.ReadFile(fname)
 	if err != nil {
 		fmt.Printf("unable to open items file: %s", err)
-		return nil, err
+		return err
 	}
 
-	err = json.Unmarshal(f, &il)
+	err = json.Unmarshal(f, &GlobalItemList)
 	if err != nil {
 		fmt.Printf("error unmarshaling JSON: %s", err)
-		return nil, err
+		return err
 	}
-	return il, nil
+	return nil
 }
 
 func AutoCompleteItems(stub string, items []Item) (Item, error) {

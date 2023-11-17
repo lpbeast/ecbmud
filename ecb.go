@@ -12,7 +12,7 @@ import (
 
 	"github.com/lpbeast/ecbmud/chara"
 	"github.com/lpbeast/ecbmud/commands"
-	"github.com/lpbeast/ecbmud/mobs"
+	"github.com/lpbeast/ecbmud/items"
 	"github.com/lpbeast/ecbmud/rooms"
 )
 
@@ -79,7 +79,7 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 				ctrlChan <- eventMsg
 				connected = false
 			} else {
-				fmt.Printf("Putting %q on the server channel.\n", input)
+				// fmt.Printf("DEBUG Putting %q on the server channel.\n", input)
 				msgForServer := inputMsg{name, input}
 				servChan <- msgForServer
 			}
@@ -111,8 +111,8 @@ func main() {
 	// ctrlChan is for the connection handlers to send control messages like LOGIN and QUIT
 	// to the main server
 	ctrlChan := make(chan ctrlMsg, 20)
-	// activeUsers associates character names with information about that character
-	activeUsers := chara.UserList{}
+	// GlobalUserList associates character names with information about that character
+	chara.GlobalUserList = chara.UserList{}
 
 	tickCounter := 0
 
@@ -133,23 +133,21 @@ func main() {
 		}
 	}(connChan)
 
-	// this is currently really ugly - rooms should know which mobs they start with,
-	// instead of mobs having to know what rooms to put them in. I think.
-	fmt.Printf("Loading mob templates.\n")
-	mobTemplates, err := mobs.LoadMobs()
+	fmt.Printf("Loading item templates.\n")
+	err = items.LoadItems()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if mobTemplates == nil {
+	if items.GlobalItemList == nil {
 		log.Fatal("No rooms loaded.\n")
 	}
 
-	fmt.Printf("Loading rooms.\n")
-	worldRooms, err := rooms.LoadRooms(mobTemplates)
+	fmt.Printf("Loading zones.\n")
+	err = rooms.LoadZones()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if worldRooms == nil {
+	if rooms.GlobalZoneList == nil {
 		log.Fatal("No rooms loaded.\n")
 	}
 
@@ -160,14 +158,14 @@ func main() {
 		for len(connChan) > 0 || len(ctrlChan) > 0 || len(servChan) > 0 {
 			select {
 			case conn := <-connChan:
-				fmt.Printf("Received connection.\n")
+				// fmt.Printf("DEBUG Received connection.\n")
 				go createConnection(conn, servChan, ctrlChan)
 			case incoming := <-ctrlChan:
-				fmt.Printf("Received control message.\n")
+				// fmt.Printf("DEBUG Received control message.\n")
 				switch incoming.event {
 				case "LOGIN":
-					fmt.Printf("Server received LOGIN for %q\n", incoming.chara)
-					if activeUsers[incoming.chara] == nil {
+					// fmt.Printf("DEBUG Server received LOGIN for %q\n", incoming.chara)
+					if chara.GlobalUserList[incoming.chara] == nil {
 						charFile := "chara" + string(os.PathSeparator) + incoming.chara + ".json"
 						charSheet := chara.CharSheet{}
 						cf, err := os.ReadFile(charFile)
@@ -181,30 +179,32 @@ func main() {
 							close(incoming.returnChannel)
 						}
 						charToLogIn := chara.ActiveCharacter{ResponseChannel: incoming.returnChannel, Cooldown: 0, CharData: charSheet, IncomingCmds: []string{}}
-						activeUsers[incoming.chara] = &charToLogIn
+						chara.GlobalUserList[incoming.chara] = &charToLogIn
 						incoming.returnChannel <- fmt.Sprintf("Welcome to Endless Crystal Blue MUD, %s.\n", incoming.chara)
-						worldRooms[charToLogIn.CharData.Location].PCs = append(worldRooms[charToLogIn.CharData.Location].PCs, &charToLogIn)
-						worldRooms[charToLogIn.CharData.Location].LocalAnnounce(fmt.Sprintf("%s wakes up.\n", charToLogIn.CharData.Name))
-						commands.RunLookCommand([]commands.Token{}, &charToLogIn, worldRooms)
+						pcZone := charToLogIn.CharData.Zone
+						pcRoom := charToLogIn.CharData.Location
+						rooms.GlobalZoneList[pcZone].Rooms[pcRoom].PCs = append(rooms.GlobalZoneList[pcZone].Rooms[pcRoom].PCs, &charToLogIn)
+						rooms.GlobalZoneList[pcZone].Rooms[pcRoom].LocalAnnounce(fmt.Sprintf("%s wakes up.\n", charToLogIn.CharData.Name))
+						commands.RunLookCommand([]commands.Token{}, &charToLogIn)
 					} else {
 						incoming.returnChannel <- "Character already logged in.\n"
-						activeUsers[incoming.chara].ResponseChannel <- "Duplicate login attempt.\n"
+						chara.GlobalUserList[incoming.chara].ResponseChannel <- "Duplicate login attempt.\n"
 						close(incoming.returnChannel)
 					}
 				case "QUIT":
-					if incoming.returnChannel == activeUsers[incoming.chara].ResponseChannel {
-						delete(activeUsers, incoming.chara)
+					if incoming.returnChannel == chara.GlobalUserList[incoming.chara].ResponseChannel {
+						delete(chara.GlobalUserList, incoming.chara)
 						close(incoming.returnChannel)
 					} else {
 						incoming.returnChannel <- "Received invalid QUIT message.\n"
-						activeUsers[incoming.chara].ResponseChannel <- "Received invalid QUIT message.\n"
+						chara.GlobalUserList[incoming.chara].ResponseChannel <- "Received invalid QUIT message.\n"
 					}
 				default:
 					log.Fatalf("Unexpected control message %q\n", incoming.event)
 				}
 			case incoming := <-servChan:
 				fmt.Printf("Received input message on tick %v.\n", tickCounter)
-				activeUsers[incoming.chara].IncomingCmds = append(activeUsers[incoming.chara].IncomingCmds, incoming.input)
+				chara.GlobalUserList[incoming.chara].IncomingCmds = append(chara.GlobalUserList[incoming.chara].IncomingCmds, incoming.input)
 			default:
 			}
 		}
@@ -212,6 +212,6 @@ func main() {
 		// between "the list of possible mobs" and "the list of currently spawned and
 		// active mobs" but that can wait till I get mobs working at all and know what
 		// I have to work with there.
-		doServerTick(worldRooms, activeUsers, mobTemplates)
+		doServerTick()
 	}
 }

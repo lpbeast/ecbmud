@@ -1,0 +1,10 @@
+{
+    "z1m0000":{
+        "ID":"z1m0000",
+        "Name":"lean wolf",
+        "Keywords":["lean", "wolf"],
+        "Desc":"A lean and hungry wolf.",
+        "Loc":"r2000",
+        "ContList":[]
+    }
+}

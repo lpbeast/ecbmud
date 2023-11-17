@@ -1,0 +1,156 @@
+{
+    "r1000":{
+        "ID":"r1000",
+        "Name":"Market Square",
+        "Desc":"A bustling market square.",
+        "Exits":{
+            "north": {
+                "Zone":"z1000",
+                "Room":"r1004",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "east": {
+                "Zone":"z1000",
+                "Room":"r1001",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "northwest": {
+                "Zone":"z1000",
+                "Room":"r1005",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "northeast": {
+                "Zone":"z1000",
+                "Room":"r1004",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":["i0001"],
+        "MobList":[]
+    },
+    "r1001":{
+        "ID":"r1001",
+        "Name":"Harbor Road West",
+        "Desc":"A cobblestone street leading east and west. You can hear the market to the west.",
+        "Exits":{
+            "east": {
+                "Zone":"z1000",
+                "Room":"r1002",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "west": {
+                "Zone":"z1000",
+                "Room":"r1000",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":["i0003"],
+        "MobList":[]
+    },
+    "r1002":{
+        "ID":"r1002",
+        "Name":"Harbor Road East",
+        "Desc":"A cobblestone street leading east and west. You can hear the harbor to the east.",
+        "Exits":{
+            "east": {
+                "Zone":"z1000",
+                "Room":"r1003",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "west": {
+                "Zone":"z1000",
+                "Room":"r1001",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":["i0002"],
+        "MobList":[]
+    },
+    "r1003":{
+        "ID":"r1003",
+        "Name":"Harbor Square",
+        "Desc":"A busy cobblestone square, full of sailors and cargo. Cries of seagulls and the scent of salt fill the air.",
+        "Exits":{
+            "west": {
+                "Zone":"z1000",
+                "Room":"r1002",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":["i0004"],
+        "MobList":[]
+    },
+    "r1004":{
+        "ID":"r1004",
+        "Name":"Market Road North",
+        "Desc":"A cobblestone street leading north and south. You can hear the market to the south.",
+        "Exits":{
+            "south": {
+                "Zone":"z1000",
+                "Room":"r1000",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "north": {
+                "Zone":"z1001",
+                "Room":"r2000",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":["i0005"],
+        "MobList":[]
+    },
+    "r1005":{
+        "ID":"r1005",
+        "Name":"Herb Shop",
+        "Desc":"A cozy little shop filled with bundles of drying herbs and things in jars.",
+        "Exits":{
+            "southeast": {
+                "Zone":"z1000",
+                "Room":"r1004",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r1006":{
+        "ID":"r1006",
+        "Name":"Smithy",
+        "Desc":"A warm, loud, and smoky blacksmith shop.",
+        "Exits":{
+            "southwest": {
+                "Zone":"z1000",
+                "Room":"r1000",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    }
+}

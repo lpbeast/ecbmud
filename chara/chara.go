@@ -29,6 +29,7 @@ var invalidNames = map[string]string{
 
 type CharSheet struct {
 	Name     string
+	Zone     string
 	Location string
 	Desc     string
 	Inv      []items.Item
@@ -42,6 +43,8 @@ type ActiveCharacter struct {
 }
 
 type UserList map[string]*ActiveCharacter
+
+var GlobalUserList UserList
 
 func checkValidName(name string, nameList map[string]string, invalidNames map[string]string) bool {
 	if len(name) > 16 {
@@ -164,7 +167,7 @@ func create(ch chan string, createChan chan string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	newCharSheet := CharSheet{name, "r1000", "A formless being.\n", []items.Item{}}
+	newCharSheet := CharSheet{name, "z1000", "r1000", "A formless being.\n", []items.Item{}}
 	jChar, err := json.MarshalIndent(newCharSheet, "", "\t")
 	if err != nil {
 		log.Fatal(err)
