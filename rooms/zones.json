@@ -1,0 +1,12 @@
+{
+    "z1000":{
+        "ID":"z1000",
+        "Name":"Walls-City-Main",
+        "MobList":[]
+    },
+    "z1001":{
+        "ID":"z1001",
+        "Name":"Old-North-Road",
+        "MobList":[]
+    }
+}

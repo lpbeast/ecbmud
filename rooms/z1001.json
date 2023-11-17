@@ -1,0 +1,156 @@
+{
+    "r2000":{
+        "ID":"r2000",
+        "Name":"Old North Road Gate",
+        "Desc":"A dusty road.",
+        "Exits":{
+            "south": {
+                "Zone":"z1000",
+                "Room":"r1004",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "north": {
+                "Zone":"z1001",
+                "Room":"r2001",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r2001":{
+        "ID":"r2001",
+        "Name":"Along the Old North Road",
+        "Desc":"A dusty road",
+        "Exits":{
+            "north": {
+                "Zone":"z1001",
+                "Room":"r2002",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "south": {
+                "Zone":"z1001",
+                "Room":"r2000",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r2002":{
+        "ID":"r2002",
+        "Name":"Along the Old North Road",
+        "Desc":"A dusty road.",
+        "Exits":{
+            "northwest": {
+                "Zone":"z1001",
+                "Room":"r2003",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            },
+            "south": {
+                "Zone":"z1001",
+                "Room":"r2001",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r2003":{
+        "ID":"r2003",
+        "Name":"Along the Old North Road",
+        "Desc":"A dusty road.",
+        "Exits":{
+            "southeast": {
+                "Zone":"z1001",
+                "Room":"r2002",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "north": {
+                "Zone":"z1001",
+                "Room":"r2004",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r2004":{
+        "ID":"r2004",
+        "Name":"Along the Old North Road",
+        "Desc":"A dusty road.",
+        "Exits":{
+            "south": {
+                "Zone":"z1001",
+                "Room":"r2003",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "northeast": {
+                "Zone":"z1001",
+                "Room":"r2005",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r2005":{
+        "ID":"r2005",
+        "Name":"Along the Old North Road",
+        "Desc":"A dusty road.",
+        "Exits":{
+            "southwest": {
+                "Zone":"z1001",
+                "Room":"r2004",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }, 
+            "north": {
+                "Zone":"z1001",
+                "Room":"r2006",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    },
+    "r2006":{
+        "ID":"r2006",
+        "Name":"Along the Old North Road",
+        "Desc":"A dusty road.",
+        "Exits":{
+            "south": {
+                "Zone":"z1001",
+                "Room":"r2005",
+                "IsLocked":false,
+                "LockKey":"",
+                "NeedsFlying":false
+            }
+        },
+        "ContList":[],
+        "MobList":[]
+    }
+}

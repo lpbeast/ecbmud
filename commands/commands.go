@@ -39,33 +39,33 @@ func ParseArgs(in string) []Token {
 	return newArgs
 }
 
-func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter, loc rooms.RoomList, charas chara.UserList) error {
+func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter) error {
 	switch pc.Command.Type {
 	case LOOK:
-		return RunLookCommand(ParseArgs(pc.Arguments), ch, loc)
+		return RunLookCommand(ParseArgs(pc.Arguments), ch)
 	case GO:
-		return RunGoCommand(ParseArgs(pc.Arguments), ch, loc)
+		return RunGoCommand(ParseArgs(pc.Arguments), ch)
 	case GET:
-		return RunGetCommand(ParseArgs(pc.Arguments), ch, loc)
+		return RunGetCommand(ParseArgs(pc.Arguments), ch)
 	case DROP:
-		return RunDropCommand(ParseArgs(pc.Arguments), ch, loc)
+		return RunDropCommand(ParseArgs(pc.Arguments), ch)
 	case INVENTORY:
 		return RunInvCommand(ch)
 	case DIRECTION:
 		args := []Token{{IDENT, pc.Command.Literal}}
-		return RunGoCommand(args, ch, loc)
+		return RunGoCommand(args, ch)
 	case SAY:
-		return RunSayCommand(pc.Arguments, ch, loc)
+		return RunSayCommand(pc.Arguments, ch)
 	case TELL:
-		return RunTellCommand(pc.Arguments, ch, charas)
+		return RunTellCommand(pc.Arguments, ch)
 	default:
 		return fmt.Errorf("command %q not handled", pc.Command.Literal)
 	}
 }
 
-func RunLookCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
+func RunLookCommand(args []Token, ch *chara.ActiveCharacter) error {
 	resp := ""
-	chLoc := loc[ch.CharData.Location]
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if len(args) == 0 {
 		args = append(args, Token{HERE, "here"})
 	}
@@ -114,15 +114,15 @@ func RunLookCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList)
 	return nil
 }
 
-func RunGoCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
-	chLoc := loc[ch.CharData.Location]
+func RunGoCommand(args []Token, ch *chara.ActiveCharacter) error {
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if len(args) == 0 {
 		ch.ResponseChannel <- "Go where?\n\n"
 	} else {
 		destString := AutoCompleteDirs(args[0].Literal)
 		if dest, ok := chLoc.Exits[destString]; ok {
-			chLoc.TransferPlayer(ch, loc[dest])
-			RunLookCommand([]Token{}, ch, loc)
+			chLoc.TransferPlayer(ch, dest.Zone, dest.Room)
+			RunLookCommand([]Token{}, ch)
 		} else {
 			ch.ResponseChannel <- "You can't go that way.\n\n"
 		}
@@ -130,8 +130,8 @@ func RunGoCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) e
 	return nil
 }
 
-func RunGetCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
-	chLoc := loc[ch.CharData.Location]
+func RunGetCommand(args []Token, ch *chara.ActiveCharacter) error {
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if len(args) == 0 {
 		ch.ResponseChannel <- "Get what?\n"
 		return nil
@@ -151,8 +151,8 @@ func RunGetCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) 
 	}
 }
 
-func RunDropCommand(args []Token, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
-	chLoc := loc[ch.CharData.Location]
+func RunDropCommand(args []Token, ch *chara.ActiveCharacter) error {
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if len(args) == 0 {
 		ch.ResponseChannel <- "Get what?\n"
 		return nil
@@ -188,8 +188,8 @@ func RunInvCommand(ch *chara.ActiveCharacter) error {
 	return nil
 }
 
-func RunSayCommand(msg string, ch *chara.ActiveCharacter, loc rooms.RoomList) error {
-	chLoc := loc[ch.CharData.Location]
+func RunSayCommand(msg string, ch *chara.ActiveCharacter) error {
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if msg == "" {
 		ch.ResponseChannel <- "Say what?\n"
 		return nil
@@ -201,7 +201,7 @@ func RunSayCommand(msg string, ch *chara.ActiveCharacter, loc rooms.RoomList) er
 	}
 }
 
-func RunTellCommand(args string, ch *chara.ActiveCharacter, charas chara.UserList) error {
+func RunTellCommand(args string, ch *chara.ActiveCharacter) error {
 	recipName, msg, _ := strings.Cut(args, " ")
 	if recipName == "" {
 		ch.ResponseChannel <- "Tell who?\n"
@@ -211,7 +211,7 @@ func RunTellCommand(args string, ch *chara.ActiveCharacter, charas chara.UserLis
 		return nil
 	} else {
 		charaSlice := []*chara.ActiveCharacter{}
-		for _, v := range charas {
+		for _, v := range chara.GlobalUserList {
 			charaSlice = append(charaSlice, v)
 		}
 		recip, err := chara.AutoCompletePCs(recipName, charaSlice)

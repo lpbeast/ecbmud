@@ -19,13 +19,15 @@ type Mob struct {
 	ContList []string `json:"ContList"`
 	Contents []items.Item
 	UUID     string
+	Zone     string
 }
 
 type MobList map[string]*Mob
 
-func LoadMobs() (MobList, error) {
+func LoadMobs(zoneID string) (MobList, error) {
+	fmt.Printf("Loading mobs for zone %s.\n", zoneID)
 	ml := MobList{}
-	fname := "mobs/mobs.json"
+	fname := "mobs" + string(os.PathSeparator) + "mobs-" + zoneID + ".json"
 	f, err := os.ReadFile(fname)
 	if err != nil {
 		fmt.Printf("unable to open items file: %s", err)
@@ -39,6 +41,7 @@ func LoadMobs() (MobList, error) {
 	}
 	for _, v := range ml {
 		v.UUID = uuid.New().String()
+		v.Zone = zoneID
 		fmt.Printf("loaded mob: %s: %s\n", v.Name, v.UUID)
 	}
 	return ml, nil

@@ -12,15 +12,17 @@ import (
 	"github.com/lpbeast/ecbmud/rooms"
 )
 
-func doServerTick(world rooms.RoomList, users chara.UserList, mobs mobs.MobList) {
+func doServerTick() {
 	start := time.Now()
 	// process everything
 	// do mobs - this is just a very basic implementation for now, to get a framework
 	// working at all before I try to get more detailed and fancy
-	for _, v := range mobs {
-		mLoc := world[v.Loc]
-		if dest, ok := mobWanderDecision(v, mLoc.Exits); ok {
-			mLoc.TransferMob(v, world[dest])
+	for _, z := range rooms.GlobalZoneList {
+		for _, v := range z.ActiveMobs {
+			mLoc := z.Rooms[v.Loc]
+			if dest, ok := mobWanderDecision(v, mLoc.Exits); ok {
+				mLoc.TransferMob(v, dest)
+			}
 		}
 	}
 
@@ -29,7 +31,9 @@ func doServerTick(world rooms.RoomList, users chara.UserList, mobs mobs.MobList)
 	// in the queue, process the first one.
 	// this should avoid race conditions even if two characters try to affect the same
 	// item or mob on the same tick
-	for _, v := range users {
+	// that is, it'll still be random which player gets to eg take an item, if they try
+	// on the same tick, but the code will not end up in a confused or incomplete state
+	for _, v := range chara.GlobalUserList {
 		if len(v.IncomingCmds) > 0 {
 			response := fmt.Sprintf("Server: Received %q from %q\n", v.IncomingCmds[0], v.CharData.Name)
 			fmt.Print(response)
@@ -38,7 +42,7 @@ func doServerTick(world rooms.RoomList, users chara.UserList, mobs mobs.MobList)
 			if err != nil {
 				log.Println(err.Error())
 			}
-			err = commands.RunCommand(pc, v, world, users)
+			err = commands.RunCommand(pc, v)
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -67,15 +71,18 @@ func doServerTick(world rooms.RoomList, users chara.UserList, mobs mobs.MobList)
 // This could have gone in the rooms package or a separate mob-control package
 // but I think it fits reasonably well here.
 
-func mobWanderDecision(m *mobs.Mob, exits map[string]string) (string, bool) {
+func mobWanderDecision(m *mobs.Mob, exits map[string]rooms.TransDest) (string, bool) {
 	// 1/300 chance of moving means any given mob should, on average, move once every 30 seconds
 	if rand.Intn(300) == 0 {
-		exitSlice := []string{}
+		exitSlice := []rooms.TransDest{}
 		for _, v := range exits {
 			exitSlice = append(exitSlice, v)
 		}
 		dest := rand.Intn(len(exitSlice))
-		return exitSlice[dest], true
+		// prevent mobs from trying to move out of the zone they're assigned to
+		if m.Zone == exitSlice[dest].Zone {
+			return exitSlice[dest].Room, true
+		}
 	}
 	return "", false
 }
