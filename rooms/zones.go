@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/lpbeast/ecbmud/mobs"
 )
 
 type ZoneTemplate struct {
-	ID       string   `json:"ID"`
-	Name     string   `json:"Name"`
-	MobsList []string `json:"MobsList"`
+	ID        string `json:"ID"`
+	Name      string `json:"Name"`
+	RepopTime int    `json:"RepopTime"`
+	RepopMsg  string `json:"RepopMsg"`
 }
 
 type ZoneTemplateList map[string]ZoneTemplate
@@ -20,6 +22,9 @@ type Zone struct {
 	ID         string
 	Name       string
 	Rooms      RoomList
+	RepopTime  int
+	RepopCtr   int
+	RepopMsg   string
 	ActiveMobs mobs.MobList
 	DeadMobs   mobs.MobList
 }
@@ -63,10 +68,27 @@ func LoadZones() error {
 			ID:         v.ID,
 			Name:       v.Name,
 			Rooms:      rl,
+			RepopTime:  v.RepopTime,
+			RepopCtr:   0,
+			RepopMsg:   v.RepopMsg,
 			ActiveMobs: ml,
+			DeadMobs:   mobs.MobList{},
 		}
 		GlobalZoneList[v.ID] = &z
 	}
 
 	return nil
+}
+
+func (z *Zone) DoRepop() {
+	fmt.Printf("LOG %v Doing repop for zone %q.\n", time.Now(), z.ID)
+	for _, v := range z.Rooms {
+		v.LocalAnnounce(z.RepopMsg + "\n")
+	}
+	for _, m := range z.DeadMobs {
+		z.ActiveMobs[m.ID] = m
+		delete(z.DeadMobs, m.ID)
+		z.Rooms[m.StartLoc].Mobs = append(z.Rooms[m.StartLoc].Mobs, m)
+		m.Loc = m.StartLoc
+	}
 }

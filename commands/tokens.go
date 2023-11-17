@@ -30,6 +30,7 @@ const (
 	LOOK = "LOOK"
 	SAY  = "SAY"
 	TELL = "TELL"
+	KILL = "KILL"
 
 	SCORE     = "SCORE"
 	INVENTORY = "INVENTORY"
@@ -83,6 +84,8 @@ var keywords = map[string]TokenType{
 	"say":  SAY,
 	"tell": TELL,
 	"t":    TELL,
+	"kill": KILL,
+	"k":    KILL,
 
 	"score":     SCORE,
 	"inventory": INVENTORY,
@@ -114,6 +117,9 @@ var keywordsList = []string{
 	"score",
 	"inventory",
 	"equipment",
+	"say",
+	"tell",
+	"kill",
 }
 
 var specialIdents = map[string]TokenType{

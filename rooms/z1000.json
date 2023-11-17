@@ -27,7 +27,7 @@
             }, 
             "northeast": {
                 "Zone":"z1000",
-                "Room":"r1004",
+                "Room":"r1006",
                 "IsLocked":false,
                 "LockKey":"",
                 "NeedsFlying":false
@@ -128,7 +128,7 @@
         "Exits":{
             "southeast": {
                 "Zone":"z1000",
-                "Room":"r1004",
+                "Room":"r1000",
                 "IsLocked":false,
                 "LockKey":"",
                 "NeedsFlying":false

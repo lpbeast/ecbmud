@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -18,11 +17,20 @@ func doServerTick() {
 	// do mobs - this is just a very basic implementation for now, to get a framework
 	// working at all before I try to get more detailed and fancy
 	for _, z := range rooms.GlobalZoneList {
+		// for each mob, decide whether or not to have it wander around
 		for _, v := range z.ActiveMobs {
 			mLoc := z.Rooms[v.Loc]
 			if dest, ok := mobWanderDecision(v, mLoc.Exits); ok {
 				mLoc.TransferMob(v, dest)
 			}
+		}
+
+		z.RepopCtr += 1
+		if z.RepopCtr >= z.RepopTime {
+			// make repop times vary slightly by changing where the counter starts.
+			// TODO: make sure to bump this up when repop times get increased for actual play.
+			z.RepopCtr = rand.Intn(1200) - 599
+			z.DoRepop()
 		}
 	}
 
@@ -35,9 +43,9 @@ func doServerTick() {
 	// on the same tick, but the code will not end up in a confused or incomplete state
 	for _, v := range chara.GlobalUserList {
 		if len(v.IncomingCmds) > 0 {
-			response := fmt.Sprintf("Server: Received %q from %q\n", v.IncomingCmds[0], v.CharData.Name)
-			fmt.Print(response)
-			v.ResponseChannel <- response
+			// response := fmt.Sprintf("DEBUG Server: Received %q from %q\n", v.IncomingCmds[0], v.CharData.Name)
+			// fmt.Print(response)
+			// v.ResponseChannel <- response
 			pc, err := commands.ParseCommand(v.IncomingCmds[0])
 			if err != nil {
 				log.Println(err.Error())
@@ -56,12 +64,6 @@ func doServerTick() {
 		log.Printf("Tick length exceeded: %v.\n", sleepTime)
 	}
 	time.Sleep(sleepTime)
-	// if rand.Intn(100) == 0 {
-	// 	for _, v := range users {
-	// 		v.ResponseChannel <- "Random asynchronous event!\n"
-	// 		break
-	// 	}
-	// }
 }
 
 // Mob decision-making functions need to have acess to information about the mobs

@@ -43,7 +43,7 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 	go func(c net.Conn, inputChan chan string) {
 		for sc.Scan() {
 			line := sc.Text()
-			fmt.Printf("Handling input line %q.\n", line)
+			// fmt.Printf("DEBUG Handling input line %q.\n", line)
 			for len(inputChan) >= cap(inputChan) {
 				time.Sleep(100 * time.Millisecond)
 			}
@@ -54,7 +54,7 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 	for !loggedIn {
 		select {
 		case response := <-ch:
-			fmt.Printf("Handler received control message: %q\n", response)
+			// fmt.Printf("DEBUG Handler received control message: %q\n", response)
 			if response[:8] == "Success:" {
 				name = response[8:]
 				loggedIn = true
@@ -66,7 +66,7 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 		default:
 		}
 	}
-	fmt.Printf("Handler for %q sending LOGIN\n", name)
+	// fmt.Printf("DEBUG Handler for %q sending LOGIN\n", name)
 	eventMsg := ctrlMsg{name, "LOGIN", ch}
 	ctrlChan <- eventMsg
 
@@ -157,7 +157,7 @@ func main() {
 				// fmt.Printf("DEBUG Received control message.\n")
 				switch incoming.event {
 				case "LOGIN":
-					// fmt.Printf("DEBUG Server received LOGIN for %q\n", incoming.chara)
+					fmt.Printf("LOG %v Server received LOGIN for %q\n", time.Now(), incoming.chara)
 					if chara.GlobalUserList[incoming.chara] == nil {
 						charFile := "chara" + string(os.PathSeparator) + incoming.chara + ".json"
 						charSheet := chara.CharSheet{}
@@ -188,7 +188,7 @@ func main() {
 					log.Fatalf("Unexpected control message %q\n", incoming.event)
 				}
 			case incoming := <-servChan:
-				fmt.Printf("Received input message on tick %v.\n", tickCounter)
+				// fmt.Printf("DEBUG Received input message on tick %v.\n", tickCounter)
 				chara.GlobalUserList[incoming.chara].IncomingCmds = append(chara.GlobalUserList[incoming.chara].IncomingCmds, incoming.input)
 			default:
 			}
