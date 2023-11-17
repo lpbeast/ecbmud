@@ -74,15 +74,8 @@ func createConnection(c net.Conn, servChan chan inputMsg, ctrlChan chan ctrlMsg)
 	for connected {
 		select {
 		case input := <-ic:
-			if input == "QUIT" {
-				eventMsg := ctrlMsg{name, "QUIT", ch}
-				ctrlChan <- eventMsg
-				connected = false
-			} else {
-				// fmt.Printf("DEBUG Putting %q on the server channel.\n", input)
-				msgForServer := inputMsg{name, input}
-				servChan <- msgForServer
-			}
+			msgForServer := inputMsg{name, input}
+			servChan <- msgForServer
 		case resp, ok := <-ch:
 			if !ok {
 				connected = false
@@ -190,14 +183,6 @@ func main() {
 						incoming.returnChannel <- "Character already logged in.\n"
 						chara.GlobalUserList[incoming.chara].ResponseChannel <- "Duplicate login attempt.\n"
 						close(incoming.returnChannel)
-					}
-				case "QUIT":
-					if incoming.returnChannel == chara.GlobalUserList[incoming.chara].ResponseChannel {
-						delete(chara.GlobalUserList, incoming.chara)
-						close(incoming.returnChannel)
-					} else {
-						incoming.returnChannel <- "Received invalid QUIT message.\n"
-						chara.GlobalUserList[incoming.chara].ResponseChannel <- "Received invalid QUIT message.\n"
 					}
 				default:
 					log.Fatalf("Unexpected control message %q\n", incoming.event)
