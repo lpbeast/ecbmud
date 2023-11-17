@@ -58,6 +58,8 @@ func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter) error {
 		return RunSayCommand(pc.Arguments, ch)
 	case TELL:
 		return RunTellCommand(pc.Arguments, ch)
+	case QUIT:
+		return RunQuitCommand(pc.Arguments, ch)
 	default:
 		return fmt.Errorf("command %q not handled", pc.Command.Literal)
 	}
@@ -225,4 +227,23 @@ func RunTellCommand(args string, ch *chara.ActiveCharacter) error {
 		recip.ResponseChannel <- otherMsg
 		return nil
 	}
+}
+
+func RunQuitCommand(args string, ch *chara.ActiveCharacter) error {
+	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
+	chMsg := "You drift off to sleep...\n"
+	otherMsg := fmt.Sprintf("%s falls asleep.\n", ch.CharData.Name)
+	chLoc.LocalAnnouncePCMsg(ch, chMsg, otherMsg)
+	delete(chara.GlobalUserList, ch.CharData.Name)
+	for k, v := range chLoc.PCs {
+		if v == ch {
+			if k == len(chLoc.PCs)-1 {
+				chLoc.PCs = chLoc.PCs[:k]
+			} else {
+				chLoc.PCs = append(chLoc.PCs[:k], chLoc.PCs[k+1:]...)
+			}
+		}
+	}
+	close(ch.ResponseChannel)
+	return nil
 }
