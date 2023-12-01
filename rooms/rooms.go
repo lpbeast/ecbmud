@@ -94,6 +94,7 @@ func (r *Room) Remove(itm string) error {
 func (r *Room) LocalAnnounce(msg string) {
 	for _, v := range r.PCs {
 		v.ResponseChannel <- msg
+		v.SendPrompt()
 	}
 }
 
@@ -104,45 +105,66 @@ func (r *Room) LocalAnnouncePCMsg(ch *chara.ActiveCharacter, chMsg string, other
 		} else {
 			v.ResponseChannel <- otherMsg
 		}
+		v.SendPrompt()
 	}
 }
 
-func (r *Room) TransferPlayer(ch *chara.ActiveCharacter, destZone string, destRoom string) {
+func (r *Room) TransferPlayer(ch *chara.ActiveCharacter, destZone string, destRoom string, announce bool) {
+	// Players can't cuurently leave a room while they're fighting, but in future they will
+	// be able to flee, recall out, possibly be summoned, and also there may be bugs, so this is
+	// for that: remove them from combat and from the aggro tables of all mobs in the room
+	for _, m := range r.Mobs {
+		for i, t := range m.TempInfo.Targets {
+			if t == ch {
+				if i == len(m.TempInfo.Targets)-1 {
+					m.TempInfo.Targets = m.TempInfo.Targets[:i]
+				} else {
+					m.TempInfo.Targets = append(m.TempInfo.Targets[:i], m.TempInfo.Targets[i+1:]...)
+				}
+				if len(m.TempInfo.Targets) == 0 {
+					m.ExitCombat()
+				}
+			}
+		}
+	}
+	ch.ExitCombat()
 	// confirm to player that they're going, announce to old room that they're leaving
 	// announce to new room that they're arriving before adding them to the room, as the
 	// player gets a look around the new room and doesn't need to be told where they came from
-	destAnnStr := "somewhere mysterious"
-	destAnnStrPC := "somewhere mysterious"
-	for k, v := range r.Exits {
-		if v.Room == destRoom {
-			destAnnStrPC = k
-			switch k {
-			case "up":
-				destAnnStr = "above"
-			case "down":
-				destAnnStr = "below"
-			default:
-				destAnnStr = "the " + k
+	if announce {
+		destAnnStr := "somewhere mysterious"
+		destAnnStrPC := "somewhere mysterious"
+		for k, v := range r.Exits {
+			if v.Room == destRoom {
+				destAnnStrPC = k
+				switch k {
+				case "up":
+					destAnnStr = "above"
+				case "down":
+					destAnnStr = "below"
+				default:
+					destAnnStr = "the " + k
+				}
 			}
 		}
-	}
-	chLeaveMsg := fmt.Sprintf("You travel %s.\n", destAnnStrPC)
-	otherLeaveMsg := fmt.Sprintf("%s leaves for %s.\n", ch.CharData.Name, destAnnStr)
-	r.LocalAnnouncePCMsg(ch, chLeaveMsg, otherLeaveMsg)
-	arrAnnStr := "somewhere mysterious"
-	for k, v := range GlobalZoneList[destZone].Rooms[destRoom].Exits {
-		if v.Room == r.ID {
-			switch k {
-			case "up":
-				arrAnnStr = "above"
-			case "down":
-				arrAnnStr = "below"
-			default:
-				arrAnnStr = "the " + k
+		chLeaveMsg := fmt.Sprintf("\nYou travel %s.\n", destAnnStrPC)
+		otherLeaveMsg := fmt.Sprintf("\n%s leaves for %s.\n", ch.CharData.Name, destAnnStr)
+		r.LocalAnnouncePCMsg(ch, chLeaveMsg, otherLeaveMsg)
+		arrAnnStr := "somewhere mysterious"
+		for k, v := range GlobalZoneList[destZone].Rooms[destRoom].Exits {
+			if v.Room == r.ID {
+				switch k {
+				case "up":
+					arrAnnStr = "above"
+				case "down":
+					arrAnnStr = "below"
+				default:
+					arrAnnStr = "the " + k
+				}
 			}
 		}
+		GlobalZoneList[destZone].Rooms[destRoom].LocalAnnounce(fmt.Sprintf("\n%s arrives from %s.\n", ch.CharData.Name, arrAnnStr))
 	}
-	GlobalZoneList[destZone].Rooms[destRoom].LocalAnnounce(fmt.Sprintf("%s arrives from %s.\n", ch.CharData.Name, arrAnnStr))
 
 	// remove character from old room, add them to new room
 	for k, v := range r.PCs {
@@ -160,36 +182,57 @@ func (r *Room) TransferPlayer(ch *chara.ActiveCharacter, destZone string, destRo
 }
 
 // Mobs do not wander into other zones.
-func (r *Room) TransferMob(m *mobs.Mob, destRoom string) {
-	destAnnStr := "somewhere mysterious"
-	for k, v := range r.Exits {
-		if v.Room == destRoom {
-			switch k {
-			case "up":
-				destAnnStr = "above"
-			case "down":
-				destAnnStr = "below"
-			default:
-				destAnnStr = "the " + k
+func (r *Room) TransferMob(m *mobs.Mob, destRoom string, announce bool) {
+	// Mobs can't wander while they're in combat, so for now this is just a backstop.
+	// At some future point mobs may be able to escape combat through some means,
+	// or be summoned, or something, so just to be sure, when a mob moves to a different room,
+	// we wipe its aggro table and remove it from player target lists.
+	for _, p := range r.PCs {
+		for i, t := range p.TempInfo.Targets {
+			if t == m {
+				if i == len(p.TempInfo.Targets)-1 {
+					p.TempInfo.Targets = p.TempInfo.Targets[:i]
+				} else {
+					p.TempInfo.Targets = append(p.TempInfo.Targets[:i], p.TempInfo.Targets[i+1:]...)
+				}
+				if len(p.TempInfo.Targets) == 0 {
+					p.ExitCombat()
+				}
 			}
 		}
 	}
-	r.LocalAnnounce(fmt.Sprintf("%s leaves for %s.\n", m.Name, destAnnStr))
+	m.ExitCombat()
+	if announce {
+		destAnnStr := "somewhere mysterious"
+		for k, v := range r.Exits {
+			if v.Room == destRoom {
+				switch k {
+				case "up":
+					destAnnStr = "above"
+				case "down":
+					destAnnStr = "below"
+				default:
+					destAnnStr = "the " + k
+				}
+			}
+		}
+		r.LocalAnnounce(fmt.Sprintf("\n%s leaves for %s.\n", m.Name, destAnnStr))
 
-	arrAnnStr := "somewhere mysterious"
-	for k, v := range GlobalZoneList[m.Zone].Rooms[destRoom].Exits {
-		if v.Room == r.ID {
-			switch k {
-			case "up":
-				arrAnnStr = "above"
-			case "down":
-				arrAnnStr = "below"
-			default:
-				arrAnnStr = "the " + k
+		arrAnnStr := "somewhere mysterious"
+		for k, v := range GlobalZoneList[m.Zone].Rooms[destRoom].Exits {
+			if v.Room == r.ID {
+				switch k {
+				case "up":
+					arrAnnStr = "above"
+				case "down":
+					arrAnnStr = "below"
+				default:
+					arrAnnStr = "the " + k
+				}
 			}
 		}
+		GlobalZoneList[m.Zone].Rooms[destRoom].LocalAnnounce(fmt.Sprintf("\n%s arrives from %s.\n", m.Name, arrAnnStr))
 	}
-	GlobalZoneList[m.Zone].Rooms[destRoom].LocalAnnounce(fmt.Sprintf("%s arrives from %s.\n", m.Name, arrAnnStr))
 
 	// remove mob from old room, add them to new room
 	for k, v := range r.Mobs {

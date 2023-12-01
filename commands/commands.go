@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/lpbeast/ecbmud/chara"
-	"github.com/lpbeast/ecbmud/combat"
 	"github.com/lpbeast/ecbmud/items"
 	"github.com/lpbeast/ecbmud/mobs"
 	"github.com/lpbeast/ecbmud/rooms"
@@ -69,6 +68,7 @@ func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter) error {
 }
 
 func RunLookCommand(args []Token, ch *chara.ActiveCharacter) error {
+	defer ch.SendPrompt()
 	resp := ""
 	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if len(args) == 0 {
@@ -100,7 +100,6 @@ func RunLookCommand(args []Token, ch *chara.ActiveCharacter) error {
 	case ME:
 		resp = ch.CharData.Desc + "\n"
 	case IDENT:
-		fmt.Printf("arguments: %+v\n", args)
 		if itm, err := items.AutoCompleteItems(args[0].Literal, ch.CharData.Inv); err == nil {
 			resp = fmt.Sprintf("%s\n", itm.Desc)
 		} else if itm, err := items.AutoCompleteItems(args[0].Literal, chLoc.Contents); err == nil {
@@ -120,16 +119,23 @@ func RunLookCommand(args []Token, ch *chara.ActiveCharacter) error {
 }
 
 func RunGoCommand(args []Token, ch *chara.ActiveCharacter) error {
+	// no deferred SendPrompt because we only want to send a prompt on failure
+	// on success RunLookCommand fires off and has its own SendPrompt
 	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
-	if len(args) == 0 {
-		ch.ResponseChannel <- "Go where?\n\n"
+	if ch.TempInfo.Position != chara.STANDING {
+		ch.ResponseChannel <- "You can't do that right now.\n"
+		ch.SendPrompt()
+	} else if len(args) == 0 {
+		ch.ResponseChannel <- "Go where?\n"
+		ch.SendPrompt()
 	} else {
 		destString := AutoCompleteDirs(args[0].Literal)
 		if dest, ok := chLoc.Exits[destString]; ok {
-			chLoc.TransferPlayer(ch, dest.Zone, dest.Room)
+			chLoc.TransferPlayer(ch, dest.Zone, dest.Room, true)
 			RunLookCommand([]Token{}, ch)
 		} else {
-			ch.ResponseChannel <- "You can't go that way.\n\n"
+			ch.ResponseChannel <- "You can't go that way.\n"
+			ch.SendPrompt()
 		}
 	}
 	return nil
@@ -178,6 +184,7 @@ func RunDropCommand(args []Token, ch *chara.ActiveCharacter) error {
 }
 
 func RunInvCommand(ch *chara.ActiveCharacter) error {
+	defer ch.SendPrompt()
 	chInv := ch.CharData.ListContents()
 	resp := ""
 	if len(chInv) > 0 {
@@ -187,7 +194,7 @@ func RunInvCommand(ch *chara.ActiveCharacter) error {
 		}
 		resp += "\n"
 	} else {
-		resp = "You are not carrying anything.\n\n"
+		resp = "You are not carrying anything.\n"
 	}
 	ch.ResponseChannel <- resp
 	return nil
@@ -200,13 +207,14 @@ func RunSayCommand(msg string, ch *chara.ActiveCharacter) error {
 		return nil
 	} else {
 		chMsg := fmt.Sprintf("You say %q\n", msg)
-		otherMsg := fmt.Sprintf("%s says %q\n", ch.CharData.Name, msg)
+		otherMsg := fmt.Sprintf("\n%s says %q\n", ch.CharData.Name, msg)
 		chLoc.LocalAnnouncePCMsg(ch, chMsg, otherMsg)
 		return nil
 	}
 }
 
 func RunTellCommand(args string, ch *chara.ActiveCharacter) error {
+	defer ch.SendPrompt()
 	recipName, msg, _ := strings.Cut(args, " ")
 	if recipName == "" {
 		ch.ResponseChannel <- "Tell who?\n"
@@ -225,9 +233,12 @@ func RunTellCommand(args string, ch *chara.ActiveCharacter) error {
 			return nil
 		}
 		chMsg := fmt.Sprintf("You tell %s %q\n", recip.CharData.Name, msg)
-		otherMsg := fmt.Sprintf("%s tells you %q\n", ch.CharData.Name, msg)
+		otherMsg := fmt.Sprintf("\n%s tells you %q\n", ch.CharData.Name, msg)
 		ch.ResponseChannel <- chMsg
 		recip.ResponseChannel <- otherMsg
+		if recip != ch {
+			recip.SendPrompt()
+		}
 		return nil
 	}
 }
@@ -256,14 +267,13 @@ func RunQuitCommand(args string, ch *chara.ActiveCharacter) error {
 }
 
 func RunKillCommand(args []Token, ch *chara.ActiveCharacter) error {
+	defer ch.SendPrompt()
 	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	if len(args) == 0 {
 		ch.ResponseChannel <- "Kill what?\n"
 	} else if m, err := mobs.AutoCompleteMobs(args[0].Literal, chLoc.Mobs); err == nil {
-		chMsg := fmt.Sprintf("You smite the %s into nothingness.\n", m.Name)
-		otherMsg := fmt.Sprintf("%s smites the %s most mightily!\n", ch.CharData.Name, m.Name)
-		chLoc.LocalAnnouncePCMsg(ch, chMsg, otherMsg)
-		combat.MakeDead(m)
+		ch.EnterCombat(m)
+		m.EnterCombat(ch)
 	} else {
 		ch.ResponseChannel <- fmt.Sprintf("There is no %v here that you can kill.\n", args[0].Literal)
 	}

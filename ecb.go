@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/lpbeast/ecbmud/chara"
+	"github.com/lpbeast/ecbmud/combat"
 	"github.com/lpbeast/ecbmud/commands"
 	"github.com/lpbeast/ecbmud/items"
 	"github.com/lpbeast/ecbmud/rooms"
@@ -93,6 +94,8 @@ func serverCleanup() {
 	fmt.Printf("Shutting down server.\n")
 }
 
+var tickCounter = 0
+
 func main() {
 	defer serverCleanup()
 	runWorld := true
@@ -106,8 +109,6 @@ func main() {
 	ctrlChan := make(chan ctrlMsg, 20)
 	// GlobalUserList associates character names with information about that character
 	chara.GlobalUserList = chara.UserList{}
-
-	tickCounter := 0
 
 	l, err := net.Listen("tcp", ":4040")
 	if err != nil {
@@ -158,6 +159,7 @@ func main() {
 				switch incoming.event {
 				case "LOGIN":
 					fmt.Printf("LOG %v Server received LOGIN for %q\n", time.Now(), incoming.chara)
+					// TODO: pull this into a function
 					if chara.GlobalUserList[incoming.chara] == nil {
 						charFile := "chara" + string(os.PathSeparator) + incoming.chara + ".json"
 						charSheet := chara.CharSheet{}
@@ -171,7 +173,10 @@ func main() {
 							incoming.returnChannel <- fmt.Sprintf("error unmarshaling JSON: %s", err)
 							close(incoming.returnChannel)
 						}
-						charToLogIn := chara.ActiveCharacter{ResponseChannel: incoming.returnChannel, Cooldown: 0, CharData: charSheet, IncomingCmds: []string{}}
+
+						transients := chara.Transients{Position: chara.STANDING, Targets: []combat.Combatant{}}
+
+						charToLogIn := chara.ActiveCharacter{ResponseChannel: incoming.returnChannel, Cooldown: 0, CharData: charSheet, TempInfo: transients, IncomingCmds: []string{}}
 						chara.GlobalUserList[incoming.chara] = &charToLogIn
 						incoming.returnChannel <- fmt.Sprintf("Welcome to Endless Crystal Blue MUD, %s.\n", incoming.chara)
 						pcZone := charToLogIn.CharData.Zone
