@@ -5,7 +5,13 @@
         "Keywords":["city", "guard", "soldier"],
         "Desc":"A bored soldier in helmet and brigandine, with a bright tabard.",
         "StartLoc":"r1000",
-        "ContList":["i0004"]
+        "ContList":["i0004"],
+        "HPCurrent":200,
+        "HPMax":200,
+        "MPCurrent":0,
+        "MPMax":0,
+        "AtkRoll":0,
+        "DamRoll":0
     },
     "z0m0001":{
         "ID":"z0m0001",
@@ -13,6 +19,12 @@
         "Keywords":["scavenging", "scavenger", "rat"],
         "Desc":"A large but scrawny rat.",
         "StartLoc":"r1001",
-        "ContList":[]
+        "ContList":[],
+        "HPCurrent":20,
+        "HPMax":20,
+        "MPCurrent":0,
+        "MPMax":0,
+        "AtkRoll":0,
+        "DamRoll":0
     }
 }

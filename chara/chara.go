@@ -6,16 +6,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 	"unicode"
 
+	"github.com/lpbeast/ecbmud/combat"
 	"github.com/lpbeast/ecbmud/items"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 const charListFile = "chara/charlist.csv"
+
+const (
+	STANDING = iota
+	FIGHTING
+	SITTING
+	SLEEPING
+)
 
 var invalidNames = map[string]string{
 	"new":  "new",
@@ -28,17 +37,32 @@ var invalidNames = map[string]string{
 }
 
 type CharSheet struct {
-	Name     string
-	Zone     string
-	Location string
-	Desc     string
-	Inv      []items.Item
+	Name     string `json:"Name"`
+	Zone     string `json:"Zone"`
+	Location string `json:"Location"`
+	Desc     string `json:"Desc"`
+
+	HPCurrent int `json:"HPCurrent"`
+	HPMax     int `json:"HPMax"`
+	MPCurrent int `json:"MPCurrent"`
+	MPMax     int `json:"MPMax"`
+	AtkRoll   int `json:"AtkRoll"`
+	DamRoll   int `json:"DamRoll"`
+
+	Inv []items.Item
+}
+
+type Transients struct {
+	Position  int
+	Targets   []combat.Combatant
+	AutoAtkCD int
 }
 
 type ActiveCharacter struct {
 	ResponseChannel chan string
 	Cooldown        int
 	CharData        CharSheet
+	TempInfo        Transients
 	IncomingCmds    []string
 }
 
@@ -167,7 +191,7 @@ func create(ch chan string, createChan chan string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	newCharSheet := CharSheet{name, "z1000", "r1000", "A formless being.\n", []items.Item{}}
+	newCharSheet := CharSheet{name, "z1000", "r1000", "A formless being.\n", 100, 100, 100, 100, 0, 0, []items.Item{}}
 	jChar, err := json.MarshalIndent(newCharSheet, "", "\t")
 	if err != nil {
 		log.Fatal(err)
@@ -209,4 +233,56 @@ func AutoCompletePCs(stub string, chList []*ActiveCharacter) (*ActiveCharacter, 
 		}
 	}
 	return nil, fmt.Errorf("not found: %q", stub)
+}
+
+func (c *ActiveCharacter) SendPrompt() {
+	p := fmt.Sprintf("\n%d/%d HP %d/%d MP >>", c.CharData.HPCurrent, c.CharData.HPMax, c.CharData.MPCurrent, c.CharData.MPMax)
+	c.ResponseChannel <- p
+}
+
+func (c *ActiveCharacter) EnterCombat(target combat.Combatant) {
+	c.TempInfo.AutoAtkCD = 0
+	c.TempInfo.Position = FIGHTING
+	c.TempInfo.Targets = append(c.TempInfo.Targets, target)
+}
+
+// The function for announcing messages to a room is in the rooms package, which
+// imports this package, so this has to assemble the message strings and return them,
+// rather than making the announcement itself.
+func (c *ActiveCharacter) DoAutoAttack() (string, string) {
+	c.TempInfo.AutoAtkCD = 20
+	chAtkMsg := fmt.Sprintf("\nYou swing at %s.\n", c.TempInfo.Targets[0].GetName())
+	otherAtkMsg := fmt.Sprintf("\n%s swings at %s.\n", c.GetName(), c.TempInfo.Targets[0].GetName())
+	tn := 99 - c.TempInfo.Targets[0].GetDefense()
+	if rand.Intn(100)+c.CharData.AtkRoll <= tn {
+		dmg := rand.Intn(10) + 1 + c.CharData.DamRoll
+		c.TempInfo.Targets[0].ReceiveDamage(dmg)
+		chAtkMsg += fmt.Sprintf("You hit %s for %d damage!\n", c.TempInfo.Targets[0].GetName(), dmg)
+		otherAtkMsg += fmt.Sprintf("%s hits %s for %d damage.\n", c.GetName(), c.TempInfo.Targets[0].GetName(), dmg)
+	} else {
+		chAtkMsg += fmt.Sprintf("You miss %s.\n", c.TempInfo.Targets[0].GetName())
+		otherAtkMsg += fmt.Sprintf("%s misses %s.\n", c.GetName(), c.TempInfo.Targets[0].GetName())
+	}
+	return chAtkMsg, otherAtkMsg
+}
+
+func (c *ActiveCharacter) ReceiveDamage(dmg int) {
+	c.CharData.HPCurrent -= dmg
+}
+
+func (c *ActiveCharacter) GetName() string {
+	return c.CharData.Name
+}
+
+func (c *ActiveCharacter) GetDefense() int {
+	return 0
+}
+
+func (c *ActiveCharacter) GetHP() int {
+	return c.CharData.HPCurrent
+}
+
+func (c *ActiveCharacter) ExitCombat() {
+	c.TempInfo.Position = STANDING
+	c.TempInfo.Targets = []combat.Combatant{}
 }

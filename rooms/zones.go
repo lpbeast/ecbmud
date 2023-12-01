@@ -83,12 +83,14 @@ func LoadZones() error {
 func (z *Zone) DoRepop() {
 	fmt.Printf("LOG %v Doing repop for zone %q.\n", time.Now(), z.ID)
 	for _, v := range z.Rooms {
-		v.LocalAnnounce(z.RepopMsg + "\n")
+		v.LocalAnnounce("\n" + z.RepopMsg + "\n")
 	}
 	for _, m := range z.DeadMobs {
 		z.ActiveMobs[m.ID] = m
 		delete(z.DeadMobs, m.ID)
 		z.Rooms[m.StartLoc].Mobs = append(z.Rooms[m.StartLoc].Mobs, m)
 		m.Loc = m.StartLoc
+		m.HPCurrent = m.HPMax
+		m.MPCurrent = m.MPMax
 	}
 }
