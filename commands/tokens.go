@@ -35,6 +35,7 @@ const (
 	SCORE     = "SCORE"
 	INVENTORY = "INVENTORY"
 	EQUIPMENT = "EQUIPMENT"
+	SAVE      = "SAVE"
 
 	PERIOD    = "."
 	DQUOTE    = "\""
@@ -94,6 +95,7 @@ var keywords = map[string]TokenType{
 	"i":         INVENTORY,
 	"inv":       INVENTORY,
 	"eq":        EQUIPMENT,
+	"save":      SAVE,
 }
 
 var keywordsList = []string{
@@ -117,6 +119,7 @@ var keywordsList = []string{
 	"score",
 	"inventory",
 	"equipment",
+	"save",
 	"say",
 	"tell",
 	"kill",
