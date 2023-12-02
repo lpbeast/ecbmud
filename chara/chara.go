@@ -286,3 +286,29 @@ func (c *ActiveCharacter) ExitCombat() {
 	c.TempInfo.Position = STANDING
 	c.TempInfo.Targets = []combat.Combatant{}
 }
+
+func (c *ActiveCharacter) Save() error {
+	// this is not how it should be, BUT when i try to do it properly by saving a
+	// temp file and then renaming it over the original save, it claims that the
+	// file is in use by another process. But I can open it and just write over it
+	// with no problem?
+	// TODO: figure out what's going on with this and fix it, so that saves have
+	// less risk of getting corrupted.
+	// tempFileName := "chara" + string(os.PathSeparator) + c.GetName() + ".tmp"
+	charFileName := "chara" + string(os.PathSeparator) + c.GetName() + ".json"
+	cf, err := os.OpenFile(charFileName, os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	jChar, err := json.MarshalIndent(c.CharData, "", "\t")
+	if err != nil {
+		return err
+	}
+	_, err = cf.Write(jChar)
+	if err != nil {
+		return err
+	}
+	// err = os.Rename(tempFileName, charFileName)
+	// done now, so return err whether or not it's nil. ideally it should be nil.
+	return err
+}

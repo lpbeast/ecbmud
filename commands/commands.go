@@ -62,6 +62,8 @@ func RunCommand(pc *ParsedCommand, ch *chara.ActiveCharacter) error {
 		return RunQuitCommand(pc.Arguments, ch)
 	case KILL:
 		return RunKillCommand(ParseArgs(pc.Arguments), ch)
+	case SAVE:
+		return RunSaveCommand(pc.Arguments, ch)
 	default:
 		return fmt.Errorf("command %q not handled", pc.Command.Literal)
 	}
@@ -248,6 +250,7 @@ func RunQuitCommand(args string, ch *chara.ActiveCharacter) error {
 		ch.ResponseChannel <- "Type QUIT all by itself to quit the game.\n"
 		return nil
 	}
+	RunSaveCommand("", ch)
 	chLoc := rooms.GlobalZoneList[ch.CharData.Zone].Rooms[ch.CharData.Location]
 	chMsg := "You drift off to sleep...\n"
 	otherMsg := fmt.Sprintf("%s falls asleep.\n", ch.CharData.Name)
@@ -279,4 +282,20 @@ func RunKillCommand(args []Token, ch *chara.ActiveCharacter) error {
 	}
 
 	return nil
+}
+
+func RunSaveCommand(args string, ch *chara.ActiveCharacter) error {
+	if len(args) > 0 {
+		ch.ResponseChannel <- "Type SAVE all by itself to save your character.\n"
+		return nil
+	}
+	defer ch.SendPrompt()
+	err := ch.Save()
+	if err != nil {
+		ch.ResponseChannel <- "Failed to save character, please try again later.\n"
+		ch.ResponseChannel <- err.Error() + "\n"
+	} else {
+		ch.ResponseChannel <- "Saved.\n"
+	}
+	return err
 }
