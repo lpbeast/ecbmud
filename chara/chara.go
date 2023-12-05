@@ -17,7 +17,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-const charListFile = "chara/charlist.csv"
+const CharListFile = "chara/charlist.csv"
 
 const (
 	STANDING = iota
@@ -97,7 +97,7 @@ func checkValidPW(pw string) bool {
 
 func getNameList(fname string) (map[string]string, error) {
 	nameList := make(map[string]string)
-	f, err := os.OpenFile(fname, os.O_CREATE|os.O_RDONLY, 0600)
+	f, err := os.OpenFile(fname, os.O_RDONLY, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func DoLogin(ch chan string, loginChan chan string) {
 			loggedIn = true
 		} else {
 			name = cases.Title(language.English).String(name)
-			nameList, err := getNameList(charListFile)
+			nameList, err := getNameList(CharListFile)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -145,7 +145,7 @@ func create(ch chan string, createChan chan string) {
 	var name, pw1, pw2 string
 	// get the list of existing names so we can check if a name is available
 	// nameList is a map from character name to hashed password
-	nameList, err := getNameList(charListFile)
+	nameList, err := getNameList(CharListFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func create(ch chan string, createChan chan string) {
 	pwHash := fmt.Sprintf("%x", hasher.Sum([]byte(pw1)))
 	newCharEntry := []string{name, pwHash}
 
-	listFile, err := os.OpenFile(charListFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	listFile, err := os.OpenFile(CharListFile, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatal(err)
 	}
