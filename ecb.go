@@ -2,7 +2,10 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha512"
+	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +18,8 @@ import (
 	"github.com/lpbeast/ecbmud/commands"
 	"github.com/lpbeast/ecbmud/items"
 	"github.com/lpbeast/ecbmud/rooms"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type inputMsg struct {
@@ -94,10 +99,84 @@ func serverCleanup() {
 	fmt.Printf("Shutting down server.\n")
 }
 
+func checkCharFile(lfname string) error {
+	// if the character list does not exist, create it, and go through generating an
+	// admin character. Admin character has no special powers yet but will in future.
+	// If the file exists but is empty, no character will be created, and any desired
+	// admin characters will need to be created by the normal process and promoted
+	// manually.
+	_, err := os.Stat(lfname)
+	if errors.Is(err, os.ErrNotExist) {
+		fmt.Printf("Welcome to Endless Crystal Blue MUD setup.\n")
+		fmt.Printf("Enter a name for your admin character.\n")
+		var name, pw1, pw2 string
+		fmt.Scanln(&name)
+		name = cases.Title(language.English).String(name)
+		for pw1 != pw2 || pw1 == "" || pw2 == "" {
+			fmt.Printf("Enter a password for this character.\n")
+			fmt.Scanln(&pw1)
+			fmt.Printf("Enter it again to confirm.\n")
+			fmt.Scanln(&pw2)
+		}
+		fmt.Print("Creating character file with initial character.\n")
+
+		lf, err := os.OpenFile(lfname, os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+		defer lf.Close()
+
+		hasher := sha512.New()
+		pwHash := fmt.Sprintf("%x", hasher.Sum([]byte(pw1)))
+		newCharEntry := []string{name, pwHash}
+
+		if err != nil {
+			return err
+		}
+		w := csv.NewWriter(lf)
+		if err := w.Write(newCharEntry); err != nil {
+			return err
+		}
+		w.Flush()
+
+		charFileName := "chara" + string(os.PathSeparator) + name + ".json"
+		cf, err := os.OpenFile(charFileName, os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Fatal(err)
+		}
+		newCharSheet := chara.CharSheet{
+			Name:      name,
+			Zone:      "z1000",
+			Location:  "r1000",
+			Desc:      "A formless being.\n",
+			HPCurrent: 100,
+			HPMax:     100,
+			MPCurrent: 100,
+			MPMax:     100,
+			AtkRoll:   0,
+			DamRoll:   0,
+			Inv:       []items.Item{},
+		}
+		jChar, err := json.MarshalIndent(newCharSheet, "", "\t")
+		if err != nil {
+			log.Fatal(err)
+		}
+		cf.Write(jChar)
+		return nil
+	}
+	return err
+}
+
 var tickCounter = 0
 
 func main() {
 	defer serverCleanup()
+
+	err := checkCharFile(chara.CharListFile)
+	if err != nil {
+		log.Fatalf("Unable to find or create characters file: %s\n", err.Error())
+	}
+
 	runWorld := true
 	// servChan is for the connection handlers to send user input to the main server
 	servChan := make(chan inputMsg, 400)
